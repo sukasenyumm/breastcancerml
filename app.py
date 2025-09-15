@@ -19,7 +19,7 @@ menu = st.sidebar.selectbox(
 
 # Dashboard
 if menu == "Dashboard":
-    st.title("🔎 Breast Cancer Classification App (KNN)")
+    st.title("🔎 Breast Cancer Classification App (KNN+GWO)")
     st.write("""
     This app uses the **Breast Cancer Wisconsin Diagnostic dataset** to classify whether a tumor is  
     **Malignant (M)** or **Benign (B)** using a **K-Nearest Neighbors (KNN) and Grey-Wolf Optimization** model.  
