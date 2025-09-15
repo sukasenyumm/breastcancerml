@@ -1,72 +1,59 @@
-# app.py
 import streamlit as st
-import numpy as np
-import joblib
-from sklearn.datasets import load_iris
 import pandas as pd
+import joblib
 
-# Load model and dataset
-iris = load_iris()
-try:
-    model = joblib.load("knn_model.pkl")
-except:
-    model = None
+# Load model and scaler
+scaler, model = joblib.load("best_knn_gwo.pkl")
 
-# Sidebar dropdown menu
+# Load dataset for Dataset page
+url = "https://raw.githubusercontent.com/minikku/Public-Datasets/refs/heads/main/breast_cancer_wisconsin_diagnostic.csv"
+df = pd.read_csv(url)
+df = df.drop(columns=["id"])
+df = df.drop(columns=["Unnamed: 32"], errors="ignore")
+
+# Sidebar menu
 menu = st.sidebar.selectbox(
-    "Navigation",
+    "Choose a Menu",
     ["Dashboard", "Dataset", "Predict"]
 )
 
-# ---------------- Dashboard ----------------
+# Dashboard
 if menu == "Dashboard":
-    st.title("🌸 Iris Classification App with KNN")
-    st.subheader("Welcome to the dashboard")
+    st.title("🔎 Breast Cancer Classification App (KNN)")
     st.write("""
-    This app demonstrates a simple **classification task** using the Iris dataset.
-    
-    - **Model:** K-Nearest Neighbors (KNN)  
-    - **Dataset:** Classic Iris flower dataset (150 samples, 3 species)  
-    - **Goal:** Predict the species of iris flower from sepal and petal measurements.
-    
-    ### How to use the app:
-    1. Go to the **Dataset** menu to explore the data.  
-    2. Use the **Predict** menu to input flower measurements and get predictions.  
+    This app uses the **Breast Cancer Wisconsin Diagnostic dataset** to classify whether a tumor is  
+    **Malignant (M)** or **Benign (B)** using a **K-Nearest Neighbors (KNN) and Grey-Wolf Optimization** model.  
+
+    ### Menu Guide
+    - **Dashboard** → Overview of the app  
+    - **Dataset** → Explore the dataset  
+    - **Predict** → Input features and get predictions  
     """)
 
-# ---------------- Dataset ----------------
+# Dataset
 elif menu == "Dataset":
-    st.title("📊 Iris Dataset Overview")
-
-    st.write("The Iris dataset is a classic dataset in machine learning, containing:")
-    st.write("- 150 samples")
-    st.write("- 4 features (sepal length, sepal width, petal length, petal width)")
-    st.write("- 3 species: setosa, versicolor, virginica")
-
-    # Convert dataset to DataFrame
-    df = pd.DataFrame(iris.data, columns=iris.feature_names)
-    df["species"] = [iris.target_names[i] for i in iris.target]
-
-    st.subheader("Preview of the dataset")
+    st.title("📊 Breast Cancer Dataset")
+    st.write("Here is a preview of the dataset:")
     st.dataframe(df.head())
+    st.write("Shape:", df.shape)
 
-    st.subheader("Class distribution")
-    st.bar_chart(df["species"].value_counts())
-
-# ---------------- Predict ----------------
+# Prediction
 elif menu == "Predict":
-    st.title("🔮 Predict Iris Species")
+    st.title("🩺 Predict Breast Cancer")
 
-    if model is None:
-        st.error("Model not found! Please train and save the model first (run knn_iris.py).")
-    else:
-        # Input fields
-        sepal_length = st.number_input("Sepal length (cm)", min_value=0.0, max_value=10.0, value=5.1)
-        sepal_width = st.number_input("Sepal width (cm)", min_value=0.0, max_value=10.0, value=3.5)
-        petal_length = st.number_input("Petal length (cm)", min_value=0.0, max_value=10.0, value=1.4)
-        petal_width = st.number_input("Petal width (cm)", min_value=0.0, max_value=10.0, value=0.2)
+    st.write("Please input the following features:")
 
-        if st.button("Predict"):
-            features = np.array([[sepal_length, sepal_width, petal_length, petal_width]])
-            prediction = model.predict(features)[0]
-            st.success(f"Predicted species: **{iris.target_names[prediction]}**")
+    # Collect inputs dynamically
+    input_data = {}
+    for col in df.drop(columns=["diagnosis"]).columns:
+        input_data[col] = st.number_input(f"{col}", float(df[col].min()), float(df[col].max()), float(df[col].mean()))
+
+    # Convert to dataframe
+    input_df = pd.DataFrame([input_data])
+
+    # Scale input
+    input_scaled = scaler.transform(input_df)
+
+    if st.button("Predict"):
+        prediction = model.predict(input_scaled)[0]
+        st.success(f"Prediction: **{'Malignant' if prediction == 'M' else 'Benign'}**")
